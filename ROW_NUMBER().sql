@@ -20,6 +20,7 @@ FROM (
 WHERE rn <= 2;  
 
   '3.Find the top 2 unique transaction values (include ties)
+    
 SELECT customer_id, order_date, amount
 FROM (
     SELECT *,
