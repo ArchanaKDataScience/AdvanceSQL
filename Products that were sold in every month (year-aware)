@@ -1,0 +1,16 @@
+WITH product_months AS (
+    SELECT 
+        product_id,
+        COUNT(DISTINCT (YEAR(order_date) * 100 + MONTH(order_date))) AS months_ordered
+    FROM orders
+    GROUP BY product_id
+),
+total_months AS (
+    SELECT 
+        COUNT(DISTINCT (YEAR(order_date) * 100 + MONTH(order_date))) AS total_months
+    FROM orders
+)
+SELECT p.product_id
+FROM product_months p
+JOIN total_months t
+  ON p.months_ordered = t.total_months;
