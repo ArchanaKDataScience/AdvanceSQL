@@ -1,14 +1,14 @@
 WITH customer_product AS (
     SELECT 
         customer_id,
-        COUNT(DISTINCT Product_id) AS product_count
+        COUNT(DISTINCT product_id) AS product_count
     FROM orders
     GROUP BY customer_id
 ),
 total_product AS (
     SELECT 
-        COUNT(DISTINCT Product_id) AS total_products
-    FROM Products
+        COUNT(DISTINCT product_id) AS total_products
+    FROM orders
 )
 SELECT c.customer_id
 FROM customer_product c
