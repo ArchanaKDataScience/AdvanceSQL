@@ -1,0 +1,26 @@
+WITH month_data AS (
+    SELECT DISTINCT
+        customer_id,
+        (YEAR(order_date)*100 + MONTH(order_date)) AS ym
+    FROM orders
+),
+seq AS (
+    SELECT 
+        customer_id,
+        ym,
+        ym - ROW_NUMBER() OVER (
+            PARTITION BY customer_id 
+            ORDER BY ym
+        ) AS grp
+    FROM month_data
+),
+streaks AS (
+    SELECT 
+        customer_id,
+        COUNT(*) AS streak_length
+    FROM seq
+    GROUP BY customer_id, grp
+)
+SELECT DISTINCT customer_id
+FROM streaks
+WHERE streak_length >= 3;
