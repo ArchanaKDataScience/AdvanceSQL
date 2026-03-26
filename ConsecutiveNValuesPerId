@@ -1,0 +1,31 @@
+SELECT DISTINCT num ConsecutiveNums 
+FROM (
+    SELECT 
+        num,
+        LAG(num, 1) OVER (ORDER BY id) AS prev1,
+        LAG(num, 2) OVER (ORDER BY id) AS prev2
+    FROM logs
+) t
+WHERE num = prev1 
+  AND num = prev2;
+
+or
+
+WITH cte AS (
+    SELECT 
+        Num,
+        Id,
+        ROW_NUMBER() OVER (ORDER BY Id) AS rn1,
+        ROW_NUMBER() OVER (PARTITION BY Num ORDER BY Id) AS rn2
+    FROM Logs
+),
+grp AS (
+    SELECT 
+        Num,
+        rn1 - rn2 AS grp
+    FROM cte
+)
+SELECT DISTINCT Num AS ConsecutiveNums
+FROM grp
+GROUP BY Num, grp
+HAVING COUNT(*) >= 3;
