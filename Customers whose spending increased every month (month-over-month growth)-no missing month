@@ -1,0 +1,41 @@
+WITH monthly_totals AS (
+    SELECT 
+        customer_id,
+        (YEAR(order_date) * 100 + MONTH(order_date)) AS ym,
+        SUM(order_amount) AS total_amount
+    FROM orders
+    GROUP BY customer_id, (YEAR(order_date) * 100 + MONTH(order_date))
+),
+lag_data AS (
+    SELECT 
+        customer_id,
+        ym,
+        total_amount,
+        LAG(total_amount) OVER (
+            PARTITION BY customer_id 
+            ORDER BY ym
+        ) AS prev_amount,
+        LAG(ym) OVER (
+            PARTITION BY customer_id 
+            ORDER BY ym
+        ) AS prev_ym
+    FROM monthly_totals
+),
+flagged AS (
+    SELECT 
+        customer_id,
+        CASE 
+            WHEN prev_amount IS NOT NULL 
+                 AND (
+                     total_amount <= prev_amount  -- not increasing
+                     OR ym - prev_ym <> 1         -- gap in months
+                 )
+            THEN 1
+            ELSE 0
+        END AS is_invalid
+    FROM lag_data
+)
+SELECT customer_id
+FROM flagged
+GROUP BY customer_id
+HAVING SUM(is_invalid) = 0;
