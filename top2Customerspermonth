@@ -1,0 +1,25 @@
+WITH monthly_totals AS (
+    SELECT 
+        customer_id,
+        (YEAR(order_date) * 100 + MONTH(order_date)) AS yearmonth,
+        SUM(order_amount) AS total_amount
+    FROM orders
+    GROUP BY customer_id, (YEAR(order_date) * 100 + MONTH(order_date))
+),
+ranked AS (
+    SELECT 
+        customer_id,
+        yearmonth,
+        total_amount,
+        DENSE_RANK() OVER (
+            PARTITION BY yearmonth 
+            ORDER BY total_amount DESC
+        ) AS rn
+    FROM monthly_totals
+)
+SELECT 
+    yearmonth,
+    customer_id,
+    total_amount
+FROM ranked
+WHERE rn <= 2;
