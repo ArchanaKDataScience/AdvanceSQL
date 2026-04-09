@@ -1,0 +1,43 @@
+WITH monthly_orders AS (
+    SELECT DISTINCT
+        customer_id,
+        DATEFROMPARTS(YEAR(order_date), MONTH(order_date), 1) AS month_start
+    FROM orders
+),
+lag_data AS (
+    SELECT 
+        customer_id,
+        month_start,
+        LAG(month_start) OVER (
+            PARTITION BY customer_id 
+            ORDER BY month_start
+        ) AS prev_month
+    FROM monthly_orders
+),
+retained AS (
+    SELECT 
+        month_start,
+        customer_id,
+        CASE 
+            WHEN DATEDIFF(MONTH, prev_month, month_start) = 1 THEN 1 
+            ELSE 0 
+        END AS is_retained
+    FROM lag_data
+),
+monthly_counts AS (
+    SELECT 
+        month_start,
+        COUNT(DISTINCT customer_id) AS total_customers
+    FROM monthly_orders
+    GROUP BY month_start
+)
+SELECT 
+    r.month_start,
+    SUM(r.is_retained) AS retained_customers,
+    mc_prev.total_customers AS prev_month_customers,
+    ROUND(100.0 * SUM(r.is_retained) / mc_prev.total_customers, 1) AS retention_rate_pct
+FROM retained r
+JOIN monthly_counts mc_prev
+    ON mc_prev.month_start = DATEADD(MONTH, -1, r.month_start)
+GROUP BY r.month_start, mc_prev.total_customers
+ORDER BY r.month_start;
