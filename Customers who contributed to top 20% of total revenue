@@ -1,0 +1,20 @@
+WITH customer_revenue AS (
+    SELECT 
+        customer_id,
+        SUM(order_amount) AS total_revenue
+    FROM orders
+    GROUP BY customer_id
+),
+ranked AS (
+    SELECT 
+        customer_id,
+        total_revenue,
+        SUM(total_revenue) OVER (ORDER BY total_revenue DESC) AS cumulative_revenue,
+        SUM(total_revenue) OVER () AS overall_revenue
+    FROM customer_revenue
+)
+SELECT 
+    customer_id,
+    total_revenue
+FROM ranked
+WHERE cumulative_revenue - total_revenue < 0.2 * overall_revenue;
