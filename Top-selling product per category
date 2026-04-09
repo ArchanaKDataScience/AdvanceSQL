@@ -1,0 +1,27 @@
+WITH revenue_data AS (
+    SELECT 
+        p.category,
+        p.product_name,
+        SUM(oi.quantity * oi.price) AS total_revenue
+    FROM products p
+    INNER JOIN order_items oi
+        ON p.product_id = oi.product_id
+    GROUP BY p.category, p.product_name
+),
+rank_data AS (
+    SELECT 
+        category, 
+        product_name, 
+        total_revenue,
+        DENSE_RANK() OVER (
+            PARTITION BY category 
+            ORDER BY total_revenue DESC
+        ) AS rn
+    FROM revenue_data
+)
+SELECT 
+    category, 
+    product_name, 
+    total_revenue
+FROM rank_data
+WHERE rn = 1;
